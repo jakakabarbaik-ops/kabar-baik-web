@@ -13,8 +13,6 @@ export async function getStaticPaths() {
 }
 
 const { berita } = Astro.props;
-
-// Gunakan fallback URL
 const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id';
 
 const tanggal = new Date(berita.date_created).toLocaleDateString('id-ID', {
