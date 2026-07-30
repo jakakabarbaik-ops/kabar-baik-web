@@ -88,12 +88,6 @@ const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id
 
         content.append(date, title);
 
-        if (news.ringkasan) {
-          const summary = document.createElement('p');
-          summary.textContent = news.ringkasan;
-          content.append(summary);
-        }
-
         const readMore = document.createElement('span');
         readMore.className = 'read-more';
         readMore.textContent = 'Baca selengkapnya →';
@@ -106,10 +100,10 @@ const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id
 
       async function loadNews() {
         try {
-          const endpoint = new URL('/items/berita', cmsUrl);
+          const endpoint = new URL('/api/berita', window.location.origin);
           endpoint.searchParams.set(
             'fields',
-            'judul,slug,cover,date_created,ringkasan'
+            'judul,slug,cover,date_created'
           );
           endpoint.searchParams.set('sort', '-date_created');
 
