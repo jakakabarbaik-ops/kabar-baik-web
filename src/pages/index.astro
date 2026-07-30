@@ -12,7 +12,8 @@ const daftarBerita = await directus.request(
 );
 
 // Mengambil URL CMS Anda untuk merangkai link gambar
-const cmsUrl = import.meta.env.DIRECTUS_URL;
+const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL;
+
 ---
 
 <html lang="id">

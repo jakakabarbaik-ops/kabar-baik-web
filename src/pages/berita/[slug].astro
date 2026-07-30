@@ -18,7 +18,7 @@ export async function getStaticPaths() {
 }
 
 const { berita } = Astro.props;
-const cmsUrl = import.meta.env.DIRECTUS_URL;
+const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL;
 
 const tanggal = new Date(berita.date_created).toLocaleDateString('id-ID', {
   year: 'numeric',
