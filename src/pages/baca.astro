@@ -1,0 +1,71 @@
+---
+const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id';
+---
+
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Memuat Artikel - Kabar Baik</title>
+  </head>
+  <body style="font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #fff; color: #333;">
+    
+    <a href="/" style="display: inline-block; margin-bottom: 20px; color: #2563eb; text-decoration: none;">
+      &larr; Kembali ke Beranda
+    </a>
+
+    <div id="loading" style="text-align: center; padding: 40px; color: #6b7280;">
+      Memuat artikel...
+    </div>
+
+    <div id="article-container" style="display: none;">
+      <h1 id="judul" style="font-size: 32px; font-weight: bold; margin-bottom: 10px; color: #111827;"></h1>
+      <p id="tanggal" style="color: #6b7280; margin-bottom: 20px;"></p>
+      <img id="cover" src="" alt="" style="width: 100%; max-height: 400px; object-fit: cover; border-radius: 12px; margin-bottom: 30px; display: none;" />
+      <div id="konten" style="font-size: 18px; line-height: 1.8;"></div>
+    </div>
+
+    <script define:vars={{ cmsUrl }}>
+      async function loadArticle() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const slug = urlParams.get('slug');
+
+        if (!slug) {
+          document.getElementById('loading').textContent = 'Artikel tidak ditemukan.';
+          return;
+        }
+
+        try {
+          const res = await fetch(`${cmsUrl}/items/berita?filter[slug][_eq]=${slug}`);
+          const data = await res.json();
+          if (data && data.data && data.data.length > 0) {
+            const berita = data.data[0];
+            
+            document.title = `${berita.judul} - Kabar Baik`;
+            document.getElementById('judul').textContent = berita.judul;
+            
+            const tgl = new Date(berita.date_created).toLocaleDateString('id-ID', {
+              year: 'numeric', month: 'long', day: 'numeric'
+            });
+            document.getElementById('tanggal').textContent = `Tayang: ${tgl}`;
+
+            if (berita.cover) {
+              const coverImg = document.getElementById('cover');
+              coverImg.src = `${cmsUrl}/assets/${berita.cover}`;
+              coverImg.style.display = 'block';
+            }
+
+            document.getElementById('konten').innerHTML = berita.konten || '';
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('article-container').style.display = 'block';
+          } else {
+            document.getElementById('loading').textContent = 'Artikel tidak ditemukan.';
+          }
+        } catch (err) {
+          document.getElementById('loading').textContent = 'Gagal memuat artikel.';
+        }
+      }
+      loadArticle();
+    </script>
+  </body>
+</html>
