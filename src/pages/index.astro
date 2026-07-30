@@ -2,8 +2,6 @@
 import { directus } from '../lib/directus';
 import { readItems } from '@directus/sdk';
 
-// Memanggil data dari tabel "berita". 
-// Perhatikan bahwa sekarang kita meminta "cover", bukan "gambar_cover"
 const daftarBerita = await directus.request(
   readItems('berita', {
     fields: ['id', 'judul', 'slug', 'date_created', 'cover'], 
@@ -11,54 +9,36 @@ const daftarBerita = await directus.request(
   })
 );
 
-// Mengambil URL CMS Anda untuk merangkai link gambar
-const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL;
-
+// Gunakan fallback URL
+const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id';
 ---
 
-<html lang="id">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>Kabar Baik - Portal Berita Positif</title>
-  </head>
-  <body style="font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
-    
-    <h1 style="text-align: center; color: #1e3a8a;">Kabar Baik.</h1>
-    <hr style="margin-bottom: 30px; border-top: 2px solid #e5e7eb;" />
 
-    <div style="display: grid; gap: 30px;">
+  
+    
+    
+    Kabar Baik - Portal Berita Positif
+  
+  
+    
+    Kabar Baik.
+    
+
+    
       {daftarBerita.map((berita) => {
-        
         const tanggal = new Date(berita.date_created).toLocaleDateString('id-ID', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
+          year: 'numeric', month: 'long', day: 'numeric'
         });
 
         return (
-          <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-            
-            {/* Memanggil gambar menggunakan berita.cover */}
+          
             {berita.cover && (
-              <img 
-                src={`${cmsUrl}/assets/${berita.cover}`} 
-                alt={berita.judul} 
-                style="width: 100%; height: 300px; object-fit: cover; border-radius: 8px; margin-bottom: 15px;"
-              />
+              
             )}
             
-            <a href={`/berita/${berita.slug}`} style="font-size: 24px; font-weight: bold; color: #111827; text-decoration: none; display: block; margin-bottom: 8px;">
               {berita.judul}
-            </a>
             
-            <small style="color: #6b7280;">
-              Tayang: {tanggal}
-            </small>
-          </div>
+            Tayang: {tanggal}
+          
         );
       })}
-    </div>
-
-  </body>
-</html>

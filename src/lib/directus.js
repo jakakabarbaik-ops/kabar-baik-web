@@ -1,3 +1,6 @@
 import { createDirectus, rest } from '@directus/sdk';
 
-export const directus = createDirectus(import.meta.env.PUBLIC_DIRECTUS_URL).with(rest());
+// Gunakan fallback URL jika variabel Cloudflare gagal terbaca
+const url = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id';
+
+export const directus = createDirectus(url).with(rest());
