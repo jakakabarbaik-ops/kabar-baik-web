@@ -1,24 +1,24 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
-import NewsGrid from '../components/NewsGrid.astro';
 ---
 
-<SiteLayout categories={[]}> 
+<SiteLayout categories={[]}>
   <div class="section-heading">
     <div>
-      <span class="eyebrow">Pilihan terbaru</span>
-      <h1>Berita Terkini</h1>
+      <span class="eyebrow">Kategori</span>
+      <h1 id="category-title">Memuat kategori...</h1>
     </div>
   </div>
 
-  <div id="status" class="status" role="status">Memuat berita terbaru...</div>
-  <div id="news-list"></div>
+  <div id="status" class="status" role="status">Memuat berita kategori...</div>
+  <div id="news-list" class="news-grid"></div>
 </SiteLayout>
 
 <script>
   const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id';
   const statusEl = document.getElementById('status');
   const newsList = document.getElementById('news-list');
+  const categoryTitle = document.getElementById('category-title');
 
   function formatDate(value) {
     if (!value) return '';
@@ -75,32 +75,48 @@ import NewsGrid from '../components/NewsGrid.astro';
     return article;
   }
 
-  async function loadNews() {
+  async function loadCategory() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const slug = urlParams.get('slug');
+
+    if (!slug) {
+      statusEl.textContent = 'Kategori tidak ditemukan.';
+      return;
+    }
+
     try {
-      const response = await fetch('/api/berita?fields=id,judul,slug,cover,date_created,kateogori.*&sort=-date_created&limit=12');
+      const endpoint = new URL(`/api/berita`, window.location.origin);
+      endpoint.searchParams.set('fields', 'id,judul,slug,cover,date_created,kateogori.*');
+      endpoint.searchParams.set('filter[kateogori][slug][_eq]', slug);
+      endpoint.searchParams.set('sort', '-date_created');
+
+      const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error(`Directus merespons dengan status ${response.status}`);
       }
+
       const result = await response.json();
       const newsItems = Array.isArray(result.data) ? result.data : [];
 
       if (newsItems.length === 0) {
-        statusEl.textContent = 'Belum ada berita yang diterbitkan.';
+        statusEl.textContent = 'Belum ada berita untuk kategori ini.';
         return;
       }
+
+      categoryTitle.textContent = newsItems[0]?.kateogori?.nama || 'Kategori tidak ditemukan';
 
       const fragment = document.createDocumentFragment();
       newsItems.forEach((news) => fragment.append(createNewsCard(news)));
       newsList.append(fragment);
       statusEl.hidden = true;
     } catch (error) {
-      console.error('Gagal memuat berita:', error);
+      console.error('Gagal memuat kategori:', error);
       statusEl.classList.add('error');
-      statusEl.textContent = 'Berita belum dapat dimuat. Silakan coba beberapa saat lagi.';
+      statusEl.textContent = 'Kategori belum dapat dimuat. Silakan coba beberapa saat lagi.';
     }
   }
 
-  loadNews();
+  loadCategory();
 </script>
 
 <style>

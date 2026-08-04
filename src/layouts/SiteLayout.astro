@@ -1,9 +1,7 @@
 ---
-import CategoryNav from '../components/CategoryNav.astro';
 const {
   title = 'Kabar Baik - Portal Berita',
   description = 'Kabar Baik, portal berita yang menyajikan kabar terbaru untuk Anda.',
-  categories = [],
   activeSlug = '',
 } = Astro.props;
 ---
@@ -22,7 +20,11 @@ const {
           <a class="brand" href="/" aria-label="Kabar Baik, halaman utama">Kabar Baik</a>
           <p>Sumber berita terpercaya Anda</p>
         </div>
-        <CategoryNav categories={categories} activeSlug={activeSlug} />
+        <nav id="category-nav" class="site-nav" data-active-slug={activeSlug} aria-label="Kategori berita">
+          <ul class="site-menu">
+            <li><a href="/">Semua</a></li>
+          </ul>
+        </nav>
       </div>
     </header>
     <main class="container page-shell">
@@ -31,6 +33,38 @@ const {
     <footer>
       <div class="container footer-inner">&copy; {new Date().getFullYear()} Kabar Baik</div>
     </footer>
+
+    <script type="module">
+      async function loadCategoryNav() {
+        const nav = document.getElementById('category-nav');
+        if (!nav) return;
+        const list = nav.querySelector('.site-menu');
+        const activeSlug = nav.dataset.activeSlug || '';
+
+        try {
+          const response = await fetch('/api/kategori');
+          if (!response.ok) return;
+          const result = await response.json();
+          const categories = Array.isArray(result.data) ? result.data : [];
+
+          categories.forEach((category) => {
+            const item = document.createElement('li');
+            const link = document.createElement('a');
+            link.href = `/kategori?slug=${encodeURIComponent(category.slug)}`;
+            link.textContent = category.nama;
+            if (category.slug === activeSlug) {
+              link.classList.add('active');
+            }
+            item.appendChild(link);
+            list.appendChild(item);
+          });
+        } catch (error) {
+          console.error('Gagal memuat navigasi kategori:', error);
+        }
+      }
+
+      loadCategoryNav();
+    </script>
   </body>
 </html>
 

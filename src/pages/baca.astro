@@ -2,15 +2,9 @@
 import SiteLayout from '../layouts/SiteLayout.astro';
 
 const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id';
-
-const categoriesResponse = await fetch(
-  `${cmsUrl}/items/kategori?fields=id,nama,slug,show_in_menu,sort&filter[show_in_menu][_eq]=true&sort=sort`
-);
-const categoriesData = await categoriesResponse.json();
-const categories = Array.isArray(categoriesData.data) ? categoriesData.data : [];
 ---
 
-<SiteLayout categories={categories}>
+<SiteLayout categories={[]}>
   <article class="article-page">
     <a class="back-link" href="/">← Kembali ke Beranda</a>
     <div id="loading" class="loading">Memuat artikel...</div>
