@@ -1,76 +1,170 @@
 ---
+import SiteLayout from '../layouts/SiteLayout.astro';
+
 const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id';
+
+const categoriesResponse = await fetch(
+  `${cmsUrl}/items/kategori?fields=id,nama,slug,show_in_menu,sort&filter[show_in_menu][_eq]=true&sort=sort`
+);
+const categoriesData = await categoriesResponse.json();
+const categories = Array.isArray(categoriesData.data) ? categoriesData.data : [];
 ---
 
-<html lang="id">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>Memuat Artikel - Kabar Baik</title>
-  </head>
-  <body style="font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #fff; color: #333;">
-    
-    <a href="/" style="display: inline-block; margin-bottom: 20px; color: #2563eb; text-decoration: none;">
-      &larr; Kembali ke Beranda
-    </a>
-
-    <div id="loading" style="text-align: center; padding: 40px; color: #6b7280;">
-      Memuat artikel...
+<SiteLayout categories={categories}>
+  <article class="article-page">
+    <a class="back-link" href="/">← Kembali ke Beranda</a>
+    <div id="loading" class="loading">Memuat artikel...</div>
+    <div id="article-container" class="article-container" hidden>
+      <h1 id="judul"></h1>
+      <p class="article-meta" id="tanggal"></p>
+      <img id="cover" class="article-cover" src="" alt="" hidden />
+      <div id="konten" class="article-body"></div>
     </div>
+  </article>
+</SiteLayout>
 
-    <div id="article-container" style="display: none;">
-      <h1 id="judul" style="font-size: 32px; font-weight: bold; margin-bottom: 10px; color: #111827;"></h1>
-      <p id="tanggal" style="color: #6b7280; margin-bottom: 20px;"></p>
-      <img id="cover" src="" alt="" style="width: 100%; max-height: 400px; object-fit: cover; border-radius: 12px; margin-bottom: 30px; display: none;" />
-      <div id="konten" style="font-size: 18px; line-height: 1.8;"></div>
-    </div>
+<script define:vars={{ cmsUrl }}>
+  const loading = document.getElementById('loading');
+  const articleContainer = document.getElementById('article-container');
+  const titleEl = document.getElementById('judul');
+  const dateEl = document.getElementById('tanggal');
+  const coverEl = document.getElementById('cover');
+  const contentEl = document.getElementById('konten');
 
-    <script define:vars={{ cmsUrl }}>
-      async function loadArticle() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const slug = urlParams.get('slug');
+  async function loadArticle() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const slug = urlParams.get('slug');
 
-        if (!slug) {
-          document.getElementById('loading').textContent = 'Artikel tidak ditemukan.';
-          return;
-        }
+    if (!slug) {
+      loading.textContent = 'Artikel tidak ditemukan.';
+      return;
+    }
 
-        try {
-          const endpoint = new URL('/api/berita', window.location.origin);
-          endpoint.searchParams.set('filter[slug][_eq]', slug);
-          const res = await fetch(endpoint);
-          if (!res.ok) {
-            throw new Error(`Gagal mengambil artikel: ${res.status}`);
-          }
-          const data = await res.json();
-          if (data && data.data && data.data.length > 0) {
-            const berita = data.data[0];
-            
-            document.title = `${berita.judul} - Kabar Baik`;
-            document.getElementById('judul').textContent = berita.judul;
-            
-            const tgl = new Date(berita.date_created).toLocaleDateString('id-ID', {
-              year: 'numeric', month: 'long', day: 'numeric'
-            });
-            document.getElementById('tanggal').textContent = `Tayang: ${tgl}`;
+    try {
+      const endpoint = new URL(`${cmsUrl}/items/berita`, window.location.origin);
+      endpoint.searchParams.set('fields', 'id,judul,konten,cover,date_created,slug,kateogori.*');
+      endpoint.searchParams.set('filter[slug][_eq]', slug);
+      endpoint.searchParams.set('limit', '1');
 
-            if (berita.cover) {
-              const coverImg = document.getElementById('cover');
-              coverImg.src = `${cmsUrl}/assets/${berita.cover}`;
-              coverImg.style.display = 'block';
-            }
-
-            document.getElementById('konten').innerHTML = berita.konten || '';
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('article-container').style.display = 'block';
-          } else {
-            document.getElementById('loading').textContent = 'Artikel tidak ditemukan.';
-          }
-        } catch (err) {
-          document.getElementById('loading').textContent = 'Gagal memuat artikel.';
-        }
+      const response = await fetch(endpoint);
+      if (!response.ok) {
+        throw new Error(`Gagal memuat artikel: ${response.status}`);
       }
-      loadArticle();
-    </script>
-  </body>
-</html>
+
+      const result = await response.json();
+      const berita = Array.isArray(result.data) ? result.data[0] : null;
+
+      if (!berita) {
+        loading.textContent = 'Artikel tidak ditemukan.';
+        return;
+      }
+
+      titleEl.textContent = berita.judul;
+      dateEl.textContent = new Date(berita.date_created).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+
+      if (berita.cover) {
+        coverEl.src = `${cmsUrl}/assets/${encodeURIComponent(berita.cover)}`;
+        coverEl.alt = berita.judul ? `Gambar ${berita.judul}` : 'Gambar berita';
+        coverEl.hidden = false;
+      }
+
+      contentEl.innerHTML = berita.konten || '';
+      loading.hidden = true;
+      articleContainer.hidden = false;
+    } catch (error) {
+      console.error('Gagal memuat artikel:', error);
+      loading.textContent = 'Gagal memuat artikel. Silakan coba beberapa saat lagi.';
+    }
+  }
+
+  loadArticle();
+</script>
+
+<style>
+  .back-link {
+    display: inline-block;
+    margin-bottom: 24px;
+    color: #176b3a;
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .article-page h1 {
+    margin-top: 0;
+    font-size: clamp(2rem, 4vw, 3rem);
+    line-height: 1.1;
+  }
+
+  .article-meta {
+    color: #6b756e;
+    margin: 12px 0 24px;
+  }
+
+  .article-cover {
+    width: 100%;
+    max-height: 520px;
+    object-fit: cover;
+    border-radius: 18px;
+    margin-bottom: 32px;
+  }
+
+  .article-body {
+    color: #323d33;
+    line-height: 1.8;
+  }
+
+  .loading {
+    padding: 32px;
+    color: #58635c;
+    text-align: center;
+    background: #fff;
+    border: 1px solid #e0e6e1;
+    border-radius: 14px;
+  }
+</style>
+<style>
+  .back-link {
+    display: inline-block;
+    margin-bottom: 24px;
+    color: #176b3a;
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .article-page h1 {
+    margin-top: 0;
+    font-size: clamp(2rem, 4vw, 3rem);
+    line-height: 1.1;
+  }
+
+  .article-meta {
+    color: #6b756e;
+    margin: 12px 0 24px;
+  }
+
+  .article-cover {
+    width: 100%;
+    max-height: 520px;
+    object-fit: cover;
+    border-radius: 18px;
+    margin-bottom: 32px;
+  }
+
+  .article-body {
+    color: #323d33;
+    line-height: 1.8;
+  }
+
+  .status {
+    padding: 24px;
+    color: #58635c;
+    text-align: center;
+    background: #fff;
+    border: 1px solid #e0e6e1;
+    border-radius: 14px;
+  }
+</style>

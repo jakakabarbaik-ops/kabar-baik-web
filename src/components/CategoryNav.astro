@@ -1,0 +1,62 @@
+---
+const { categories = [], activeSlug = '' } = Astro.props;
+---
+<nav class="site-nav" aria-label="Kategori berita">
+  <ul class="site-menu">
+    <li>
+      <a class={activeSlug === '' ? 'active' : ''} href="/">Semua</a>
+    </li>
+    {categories.map((category) => (
+      <li>
+        <a
+          class={activeSlug === category.slug ? 'active' : ''}
+          href={`/kategori/${category.slug}`}
+        >
+          {category.nama}
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>
+
+<style>
+  .site-nav {
+    width: 100%;
+  }
+
+  .site-menu {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .site-menu a {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 18px;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    transition: background 180ms ease, color 180ms ease;
+  }
+
+  .site-menu a:hover,
+  .site-menu a.active {
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  @media (max-width: 760px) {
+    .site-menu {
+      gap: 8px;
+    }
+
+    .site-menu a {
+      padding: 10px 14px;
+      font-size: 0.95rem;
+    }
+  }
+</style>
