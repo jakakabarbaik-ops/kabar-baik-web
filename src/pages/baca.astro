@@ -35,7 +35,7 @@ const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id
     }
 
     try {
-      const endpoint = new URL('/api/berita', window.location.origin);
+      const endpoint = new URL(`${cmsUrl}/items/berita`);
       endpoint.searchParams.set('fields', 'id,judul,konten,cover,date_created,slug');
       endpoint.searchParams.set('filter[slug][_eq]', slug);
       endpoint.searchParams.set('limit', '1');

@@ -85,12 +85,11 @@ import SiteLayout from '../layouts/SiteLayout.astro';
     }
 
     try {
-      const endpoint = new URL(`/api/berita`, window.location.origin);
-      endpoint.searchParams.set('fields', 'id,judul,slug,cover,date_created,kategori.*');
-      endpoint.searchParams.set('filter[kategori][slug][_eq]', slug);
-      endpoint.searchParams.set('sort', '-date_created');
-
-      const response = await fetch(endpoint);
+      const response = await fetch(
+        `${cmsUrl}/items/berita?fields=id,judul,slug,cover,date_created,kategori.*&filter[kategori][slug][_eq]=${encodeURIComponent(
+          slug
+        )}&sort=-date_created`
+      );
       if (!response.ok) {
         throw new Error(`Directus merespons dengan status ${response.status}`);
       }

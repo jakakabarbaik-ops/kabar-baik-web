@@ -35,6 +35,8 @@ const {
     </footer>
 
     <script type="module">
+      const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id';
+
       async function loadCategoryNav() {
         const nav = document.getElementById('category-nav');
         if (!nav) return;
@@ -42,7 +44,9 @@ const {
         const activeSlug = nav.dataset.activeSlug || '';
 
         try {
-          const response = await fetch('/api/kategori');
+          const response = await fetch(
+            `${cmsUrl}/items/kategori?fields=id,nama,slug,show_in_menu,sort&filter[show_in_menu][_eq]=true&sort=sort`
+          );
           if (!response.ok) return;
           const result = await response.json();
           const categories = Array.isArray(result.data) ? result.data : [];
