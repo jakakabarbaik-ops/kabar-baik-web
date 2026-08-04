@@ -35,14 +35,15 @@ const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id
     }
 
     try {
-      const endpoint = new URL(`${cmsUrl}/items/berita`, window.location.origin);
-      endpoint.searchParams.set('fields', 'id,judul,konten,cover,date_created,slug,kateogori.*');
+      const endpoint = new URL('/api/berita', window.location.origin);
+      endpoint.searchParams.set('fields', 'id,judul,konten,cover,date_created,slug');
       endpoint.searchParams.set('filter[slug][_eq]', slug);
       endpoint.searchParams.set('limit', '1');
 
       const response = await fetch(endpoint);
       if (!response.ok) {
-        throw new Error(`Gagal memuat artikel: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`Gagal memuat artikel: ${response.status} ${errorText}`);
       }
 
       const result = await response.json();

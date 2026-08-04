@@ -77,7 +77,7 @@ import NewsGrid from '../components/NewsGrid.astro';
 
   async function loadNews() {
     try {
-      const response = await fetch('/api/berita?fields=id,judul,slug,cover,date_created,kateogori.*&sort=-date_created&limit=12');
+      const response = await fetch('/api/berita?fields=id,judul,slug,cover,date_created&sort=-date_created&limit=12');
       if (!response.ok) {
         throw new Error(`Directus merespons dengan status ${response.status}`);
       }
