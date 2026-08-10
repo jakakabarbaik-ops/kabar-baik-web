@@ -3,6 +3,7 @@ const {
   title = 'Kabar Baik - Portal Berita',
   description = 'Kabar Baik, portal berita yang menyajikan kabar terbaru untuk Anda.',
   activeSlug = '',
+  activePage = '',
 } = Astro.props;
 ---
 <!doctype html>
@@ -23,6 +24,7 @@ const {
         <nav id="category-nav" class="site-nav" data-active-slug={activeSlug} aria-label="Kategori berita">
           <ul class="site-menu">
             <li><a href="/">Semua</a></li>
+            <li class="institutional-menu"><a href="/tentang-kami" class:list={{ active: activePage === 'tentang-kami' }}>Tentang Kami</a></li>
           </ul>
         </nav>
       </div>
@@ -127,6 +129,11 @@ const {
     color: #d9f1e2;
   }
 
+  .site-menu { display:flex; align-items:center; gap:8px; margin:0; padding:0; list-style:none; flex-wrap:wrap; }
+  .site-menu a { display:block; padding:9px 12px; color:#e7f4eb; border-radius:8px; font-size:.88rem; font-weight:700; text-decoration:none; }
+  .site-menu a:hover, .site-menu a.active { color:#176b3a; background:#fff; }
+  .institutional-menu { margin-left:8px; padding-left:14px; border-left:1px solid rgba(255,255,255,.3); }
+
   .page-shell {
     min-height: calc(100vh - 240px);
     padding-block: 48px 64px;
@@ -162,5 +169,7 @@ const {
     .page-shell {
       padding-block: 36px 48px;
     }
+
+    .institutional-menu { margin-left:0; padding-left:0; border-left:0; }
   }
 </style>

@@ -1,0 +1,81 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+---
+
+<SiteLayout
+  title="Tentang Kami - Media Kabar Baik"
+  description="Mengenal Media Kabar Baik, media digital dengan semangat jurnalisme positif, konstruktif, dan inspiratif."
+  activePage="tentang-kami"
+>
+  <article class="about-page">
+    <header class="hero">
+      <span class="eyebrow">Tentang Kami</span>
+      <h1>Media Kabar Baik</h1>
+      <p class="lead">Media digital dengan semangat jurnalisme positif, konstruktif, dan inspiratif.</p>
+    </header>
+
+    <section class="story" aria-labelledby="profil-title">
+      <div class="section-label"><span>01</span><h2 id="profil-title">Profil Kami</h2></div>
+      <div class="prose">
+        <p>Kami percaya, berita tidak hanya berfungsi menginformasikan peristiwa, tetapi juga membangun harapan, menghadirkan solusi, serta menginspirasi masyarakat untuk menciptakan perubahan yang lebih baik.</p>
+        <p>Media Kabar Baik menghadirkan berita yang akurat, berimbang, dan berlandaskan etika jurnalistik.</p>
+        <p>Kami tidak mengabaikan persoalan bangsa, tetapi menyajikannya secara utuh dengan konteks, solusi, dan kisah-kisah nyata tentang inovasi, kepedulian sosial, dunia usaha, pendidikan, budaya, lingkungan, teknologi, serta tokoh-tokoh yang membawa dampak positif bagi masyarakat.</p>
+        <p>Kami ingin menjadi ruang bagi lahirnya optimisme, kolaborasi, dan semangat gotong royong dalam membangun Indonesia yang lebih maju, adil, dan sejahtera.</p>
+      </div>
+    </section>
+
+    <section class="vision" aria-labelledby="visi-title">
+      <span class="section-number">02</span>
+      <div><span class="eyebrow">Visi</span><h2 id="visi-title">Media terpercaya yang memberi harapan.</h2></div>
+      <p>Menjadi media terpercaya yang menyebarkan kabar baik, menghadirkan jurnalisme positif, dan menjadi inspirasi masyarakat Indonesia yang optimis, cerdas, dan berdaya saing.</p>
+    </section>
+
+    <section class="mission" aria-labelledby="misi-title">
+      <div class="section-label"><span>03</span><h2 id="misi-title">Misi Kami</h2></div>
+      <ol>
+        <li>Menyajikan berita yang akurat, independen, berimbang, dan berlandaskan Kode Etik Jurnalistik.</li>
+        <li>Mengedepankan jurnalisme positif yang tidak hanya mengungkap masalah, tetapi juga menghadirkan solusi dan inspirasi.</li>
+        <li>Mengangkat kisah sukses, inovasi, kewirausahaan, pendidikan, budaya, lingkungan, kesehatan, dan kemanusiaan.</li>
+        <li>Menjadi mitra dunia usaha, komunitas, dan masyarakat dalam menyebarluaskan informasi terbaik yang bermanfaat bagi publik, tanpa mengabaikan independensi redaksi.</li>
+        <li>Mendorong literasi digital, menangkal hoaks, serta memperkuat budaya berpikir kritis di tengah masyarakat.</li>
+        <li>Mengembangkan ekosistem media digital yang inovatif melalui pemanfaatan teknologi, multimedia, dan kecerdasan buatan untuk meningkatkan kualitas layanan informasi.</li>
+        <li>Menjadi wadah kolaborasi bagi jurnalis, akademisi, pelaku usaha, komunitas, dan generasi muda untuk bersama-sama membangun Indonesia melalui informasi yang mencerdaskan dan memberi harapan.</li>
+      </ol>
+    </section>
+
+    <blockquote>
+      <span>Tagline kami</span>
+      “Menginspirasi Harapan dan Perubahan.”
+    </blockquote>
+  </article>
+</SiteLayout>
+
+<style>
+  .about-page { max-width: 980px; margin-inline: auto; }
+  .hero { max-width: 820px; padding: 24px 0 58px; }
+  .eyebrow { color:#177447; font-size:.75rem; font-weight:800; letter-spacing:.15em; text-transform:uppercase; }
+  .hero h1 { margin:10px 0 20px; color:#13251a; font-size:clamp(3rem,8vw,6.5rem); line-height:.92; letter-spacing:-.065em; }
+  .lead { max-width:680px; margin:0; color:#536159; font-size:clamp(1.15rem,2.5vw,1.55rem); line-height:1.55; }
+  .story, .mission { display:grid; grid-template-columns:210px minmax(0,1fr); gap:48px; padding:52px 0; border-top:1px solid #d7e0da; }
+  .section-label { display:flex; align-items:baseline; gap:14px; }
+  .section-label span, .section-number { color:#9aa79e; font-size:.75rem; font-weight:800; }
+  .section-label h2 { margin:0; font-size:1.15rem; }
+  .prose p { margin:0 0 20px; color:#39473e; font-size:1.08rem; line-height:1.85; }
+  .vision { position:relative; display:grid; grid-template-columns:1fr 1fr; gap:48px; padding:48px; margin:20px 0 72px; color:#fff; background:#176b3a; border-radius:24px; overflow:hidden; }
+  .vision .section-number { position:absolute; top:18px; right:24px; color:#a9d2b7; }
+  .vision .eyebrow { color:#bce0c8; }
+  .vision h2 { margin:10px 0 0; font-size:clamp(1.8rem,4vw,3rem); line-height:1.08; letter-spacing:-.04em; }
+  .vision p { align-self:end; margin:0; color:#e0f0e5; line-height:1.75; }
+  .mission ol { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:0; padding:0; list-style:none; counter-reset:misi; }
+  .mission li { counter-increment:misi; padding:22px; color:#39473e; background:#fff; border:1px solid #dce4de; border-radius:14px; line-height:1.6; }
+  .mission li::before { content:counter(misi,decimal-leading-zero); display:block; margin-bottom:18px; color:#177447; font-size:.75rem; font-weight:800; }
+  blockquote { display:flex; flex-direction:column; gap:14px; margin:42px 0 10px; padding:48px; color:#13251a; text-align:center; background:#e5f0e8; border-radius:24px; font-size:clamp(1.7rem,4vw,3rem); font-weight:800; line-height:1.15; letter-spacing:-.04em; }
+  blockquote span { color:#177447; font-size:.7rem; letter-spacing:.15em; text-transform:uppercase; }
+  @media (max-width:720px) {
+    .hero { padding-top:8px; }
+    .story, .mission, .vision { grid-template-columns:1fr; gap:28px; }
+    .vision { padding:32px 26px; }
+    .mission ol { grid-template-columns:1fr; }
+    blockquote { padding:36px 22px; }
+  }
+</style>
