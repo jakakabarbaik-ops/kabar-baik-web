@@ -2,6 +2,20 @@
 import SiteLayout from '../layouts/SiteLayout.astro';
 
 const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id';
+let allArticles = [];
+let loadError = false;
+
+try {
+  const response = await fetch(
+    `${cmsUrl}/items/berita?fields=id,judul,konten,cover,date_created,slug&sort=-date_created`
+  );
+  if (!response.ok) throw new Error(`Directus merespons dengan status ${response.status}`);
+  const result = await response.json();
+  allArticles = Array.isArray(result.data) ? result.data : [];
+} catch (error) {
+  loadError = true;
+  console.error('Gagal memuat artikel saat build:', error);
+}
 ---
 
 <SiteLayout categories={[]}>
@@ -17,7 +31,7 @@ const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id
   </article>
 </SiteLayout>
 
-<script define:vars={{ cmsUrl }}>
+<script define:vars={{ cmsUrl, allArticles, initialLoadError: loadError }}>
   const loading = document.getElementById('loading');
   const articleContainer = document.getElementById('article-container');
   const titleEl = document.getElementById('judul');
@@ -35,19 +49,8 @@ const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id
     }
 
     try {
-      const endpoint = new URL(`${cmsUrl}/items/berita`);
-      endpoint.searchParams.set('fields', 'id,judul,konten,cover,date_created,slug');
-      endpoint.searchParams.set('filter[slug][_eq]', slug);
-      endpoint.searchParams.set('limit', '1');
-
-      const response = await fetch(endpoint);
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Gagal memuat artikel: ${response.status} ${errorText}`);
-      }
-
-      const result = await response.json();
-      const berita = Array.isArray(result.data) ? result.data[0] : null;
+      if (initialLoadError) throw new Error('Data artikel gagal dimuat saat build');
+      const berita = allArticles.find((article) => article.slug === slug);
 
       if (!berita) {
         loading.textContent = 'Artikel tidak ditemukan.';

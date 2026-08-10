@@ -1,5 +1,21 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
+
+const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id';
+let allNewsItems = [];
+let loadError = false;
+
+try {
+  const response = await fetch(
+    `${cmsUrl}/items/berita?fields=id,judul,slug,cover,date_created,kategori.*&sort=-date_created`
+  );
+  if (!response.ok) throw new Error(`Directus merespons dengan status ${response.status}`);
+  const result = await response.json();
+  allNewsItems = Array.isArray(result.data) ? result.data : [];
+} catch (error) {
+  loadError = true;
+  console.error('Gagal memuat kategori saat build:', error);
+}
 ---
 
 <SiteLayout categories={[]}>
@@ -14,8 +30,7 @@ import SiteLayout from '../layouts/SiteLayout.astro';
   <div id="news-list" class="news-grid"></div>
 </SiteLayout>
 
-<script>
-  const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id';
+<script define:vars={{ cmsUrl, allNewsItems, initialLoadError: loadError }}>
   const statusEl = document.getElementById('status');
   const newsList = document.getElementById('news-list');
   const categoryTitle = document.getElementById('category-title');
@@ -85,24 +100,15 @@ import SiteLayout from '../layouts/SiteLayout.astro';
     }
 
     try {
-      const response = await fetch(
-        `${cmsUrl}/items/berita?fields=id,judul,slug,cover,date_created,kategori.*&filter[kategori][slug][_eq]=${encodeURIComponent(
-          slug
-        )}&sort=-date_created`
-      );
-      if (!response.ok) {
-        throw new Error(`Directus merespons dengan status ${response.status}`);
-      }
-
-      const result = await response.json();
-      const newsItems = Array.isArray(result.data) ? result.data : [];
+      if (initialLoadError) throw new Error('Data berita gagal dimuat saat build');
+      const newsItems = allNewsItems.filter((news) => news.kategori?.slug === slug);
 
       if (newsItems.length === 0) {
         statusEl.textContent = 'Belum ada berita untuk kategori ini.';
         return;
       }
 
-      categoryTitle.textContent = newsItems[0]?.kateogori?.nama || 'Kategori tidak ditemukan';
+      categoryTitle.textContent = newsItems[0]?.kategori?.nama || 'Kategori tidak ditemukan';
 
       const fragment = document.createDocumentFragment();
       newsItems.forEach((news) => fragment.append(createNewsCard(news)));

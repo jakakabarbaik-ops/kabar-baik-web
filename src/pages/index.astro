@@ -1,6 +1,21 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
-import NewsGrid from '../components/NewsGrid.astro';
+
+const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id';
+let newsItems = [];
+let loadError = false;
+
+try {
+  const response = await fetch(
+    `${cmsUrl}/items/berita?fields=id,judul,slug,cover,date_created&sort=-date_created&limit=12`
+  );
+  if (!response.ok) throw new Error(`Directus merespons dengan status ${response.status}`);
+  const result = await response.json();
+  newsItems = Array.isArray(result.data) ? result.data : [];
+} catch (error) {
+  loadError = true;
+  console.error('Gagal memuat berita saat build:', error);
+}
 ---
 
 <SiteLayout categories={[]}> 
@@ -15,8 +30,7 @@ import NewsGrid from '../components/NewsGrid.astro';
   <div id="news-list"></div>
 </SiteLayout>
 
-<script>
-  const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id';
+<script define:vars={{ cmsUrl, initialNewsItems: newsItems, initialLoadError: loadError }}>
   const statusEl = document.getElementById('status');
   const newsList = document.getElementById('news-list');
 
@@ -75,31 +89,22 @@ import NewsGrid from '../components/NewsGrid.astro';
     return article;
   }
 
-  async function loadNews() {
-    try {
-      const response = await fetch(
-        `${cmsUrl}/items/berita?fields=id,judul,slug,cover,date_created&sort=-date_created&limit=12`
-      );
-      if (!response.ok) {
-        throw new Error(`Directus merespons dengan status ${response.status}`);
-      }
-      const result = await response.json();
-      const newsItems = Array.isArray(result.data) ? result.data : [];
-
-      if (newsItems.length === 0) {
-        statusEl.textContent = 'Belum ada berita yang diterbitkan.';
-        return;
-      }
-
-      const fragment = document.createDocumentFragment();
-      newsItems.forEach((news) => fragment.append(createNewsCard(news)));
-      newsList.append(fragment);
-      statusEl.hidden = true;
-    } catch (error) {
-      console.error('Gagal memuat berita:', error);
+  function loadNews() {
+    if (initialLoadError) {
       statusEl.classList.add('error');
       statusEl.textContent = 'Berita belum dapat dimuat. Silakan coba beberapa saat lagi.';
+      return;
     }
+
+    if (initialNewsItems.length === 0) {
+      statusEl.textContent = 'Belum ada berita yang diterbitkan.';
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+    initialNewsItems.forEach((news) => fragment.append(createNewsCard(news)));
+    newsList.append(fragment);
+    statusEl.hidden = true;
   }
 
   loadNews();
