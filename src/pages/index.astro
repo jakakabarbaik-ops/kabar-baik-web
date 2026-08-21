@@ -145,5 +145,13 @@ import SiteLayout from '../layouts/SiteLayout.astro';
   .card-content { padding:18px 19px 20px; }
   .card-content h3 { min-height:2.7em; margin:7px 0 17px; font-size:1.08rem; line-height:1.35; }
   @media (max-width:900px) { .lead-layout { grid-template-columns:1fr; } .featured-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:24px; } .list-heading { grid-column:1/-1; } .news-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-  @media (max-width:620px) { .page-intro { display:block; } .page-intro p { margin-top:14px; } .featured-list, .news-grid { grid-template-columns:1fr; } .headline-content { padding:20px; } .latest-section { margin-top:48px; } }
+  @media (max-width:620px) {
+    .page-intro { display:block; }
+    .page-intro p { margin-top:14px; }
+    .featured-list, .news-grid { grid-template-columns:1fr; }
+    .headline-media { aspect-ratio:16/8.5; max-height:190px; }
+    .card-media { aspect-ratio:16/8.5; max-height:170px; }
+    .headline-content { padding:20px; }
+    .latest-section { margin-top:48px; }
+  }
 </style>
