@@ -1,21 +1,5 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
-
-const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id';
-let allNewsItems = [];
-let loadError = false;
-
-try {
-  const response = await fetch(
-    `${cmsUrl}/items/berita?fields=id,judul,slug,cover,date_created,kategori.*&sort=-date_created`
-  );
-  if (!response.ok) throw new Error(`Directus merespons dengan status ${response.status}`);
-  const result = await response.json();
-  allNewsItems = Array.isArray(result.data) ? result.data : [];
-} catch (error) {
-  loadError = true;
-  console.error('Gagal memuat kategori saat build:', error);
-}
 ---
 
 <SiteLayout categories={[]}>
@@ -30,89 +14,65 @@ try {
   <div id="news-list" class="news-grid"></div>
 </SiteLayout>
 
-<script define:vars={{ cmsUrl, allNewsItems, initialLoadError: loadError }}>
+<script>
+  const CMS_URL = 'https://cms.kabar-baik.id';
   const statusEl = document.getElementById('status');
   const newsList = document.getElementById('news-list');
   const categoryTitle = document.getElementById('category-title');
 
-  function formatDate(value) {
-    if (!value) return '';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  }
+  const formatDate = (value) => value ? new Date(value).toLocaleDateString('id-ID', {
+    day: 'numeric', month: 'long', year: 'numeric'
+  }) : '';
 
   function createNewsCard(news) {
     const article = document.createElement('article');
     article.className = 'news-card';
-
-    const link = document.createElement('a');
-    link.className = 'card-link';
-    link.href = `/baca?slug=${encodeURIComponent(news.slug ?? '')}`;
-
-    if (news.cover) {
-      const image = document.createElement('img');
-      image.className = 'cover';
-      image.src = `${cmsUrl}/assets/${encodeURIComponent(news.cover)}`;
-      image.alt = news.judul ? `Gambar ${news.judul}` : 'Gambar berita';
-      image.loading = 'lazy';
-      link.append(image);
-    } else {
-      const placeholder = document.createElement('div');
-      placeholder.className = 'cover placeholder';
-      placeholder.textContent = 'Kabar Baik';
-      link.append(placeholder);
-    }
-
-    const content = document.createElement('div');
-    content.className = 'card-content';
-
-    const date = document.createElement('time');
-    date.dateTime = news.date_created ?? '';
-    date.textContent = formatDate(news.date_created);
-
-    const title = document.createElement('h2');
-    title.textContent = news.judul || 'Berita tanpa judul';
-
-    content.append(date, title);
-
-    const readMore = document.createElement('span');
-    readMore.className = 'read-more';
-    readMore.textContent = 'Baca selengkapnya →';
-    content.append(readMore);
-
-    link.append(content);
-    article.append(link);
+    article.innerHTML = `
+      <a class="card-link" href="/baca?slug=${encodeURIComponent(news.slug ?? '')}">
+        ${news.cover
+          ? `<img class="cover" src="${CMS_URL}/assets/${encodeURIComponent(news.cover)}" alt="Gambar ${news.judul || 'berita'}" loading="lazy" />`
+          : '<div class="cover placeholder">Kabar Baik</div>'}
+        <div class="card-content">
+          <time datetime="${news.date_created || ''}">${formatDate(news.date_created)}</time>
+          <h2>${news.judul || 'Berita tanpa judul'}</h2>
+          <span class="read-more">Baca selengkapnya →</span>
+        </div>
+      </a>`;
     return article;
   }
 
   async function loadCategory() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const slug = urlParams.get('slug');
-
+    const slug = new URLSearchParams(window.location.search).get('slug');
     if (!slug) {
+      categoryTitle.textContent = 'Kategori tidak ditemukan';
       statusEl.textContent = 'Kategori tidak ditemukan.';
       return;
     }
 
     try {
-      if (initialLoadError) throw new Error('Data berita gagal dimuat saat build');
-      const newsItems = allNewsItems.filter((news) => news.kategori?.slug === slug);
+      const params = new URLSearchParams({
+        fields: 'id,judul,slug,cover,date_created,kategori.*',
+        sort: '-date_created',
+      });
+      params.set('filter[kategori][slug][_eq]', slug);
 
-      if (newsItems.length === 0) {
+      const response = await fetch(`/api/berita?${params.toString()}`, {
+        headers: { Accept: 'application/json' },
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const result = await response.json();
+      const newsItems = Array.isArray(result.data) ? result.data : [];
+      if (!newsItems.length) {
+        categoryTitle.textContent = slug.replace(/-/g, ' ');
         statusEl.textContent = 'Belum ada berita untuk kategori ini.';
         return;
       }
 
-      categoryTitle.textContent = newsItems[0]?.kategori?.nama || 'Kategori tidak ditemukan';
-
+      categoryTitle.textContent = newsItems[0]?.kategori?.nama || slug.replace(/-/g, ' ');
       const fragment = document.createDocumentFragment();
       newsItems.forEach((news) => fragment.append(createNewsCard(news)));
-      newsList.append(fragment);
+      newsList.replaceChildren(fragment);
       statusEl.hidden = true;
     } catch (error) {
       console.error('Gagal memuat kategori:', error);
@@ -125,39 +85,20 @@ try {
 </script>
 
 <style>
-  .section-heading {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    margin-bottom: 28px;
-  }
-
-  .eyebrow {
-    color: #26794a;
-    font-size: 0.78rem;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-
-  h1 {
-    margin: 5px 0 0;
-    font-size: clamp(2rem, 5vw, 3rem);
-    letter-spacing: -0.04em;
-  }
-
-  .status {
-    padding: 24px;
-    color: #58635c;
-    text-align: center;
-    background: #fff;
-    border: 1px solid #e0e6e1;
-    border-radius: 14px;
-  }
-
-  .status.error {
-    color: #9d2d24;
-    background: #fff4f2;
-    border-color: #f4cbc6;
-  }
+  .section-heading { display:flex; align-items:end; justify-content:space-between; margin-bottom:28px; }
+  .eyebrow { color:#26794a; font-size:.78rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+  h1 { margin:5px 0 0; font-size:clamp(2rem,5vw,3rem); letter-spacing:-.04em; text-transform:capitalize; }
+  .status { padding:24px; color:#58635c; text-align:center; background:#fff; border:1px solid #e0e6e1; border-radius:14px; }
+  .status.error { color:#9d2d24; background:#fff4f2; border-color:#f4cbc6; }
+  .news-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; }
+  .news-card { overflow:hidden; background:#fff; border:1px solid #dce4de; border-radius:16px; }
+  .card-link { color:inherit; text-decoration:none; }
+  .cover { display:block; width:100%; aspect-ratio:16/10; object-fit:cover; background:#dfeae2; }
+  .placeholder { display:grid; place-items:center; color:#176b3a; font-weight:800; }
+  .card-content { padding:18px 19px 20px; }
+  time { color:#78837b; font-size:.78rem; font-weight:600; }
+  .card-content h2 { margin:7px 0 17px; font-size:1.08rem; line-height:1.35; }
+  .read-more { color:#177447; font-size:.86rem; font-weight:800; }
+  @media (max-width:900px) { .news-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  @media (max-width:620px) { .news-grid { grid-template-columns:1fr; } }
 </style>
