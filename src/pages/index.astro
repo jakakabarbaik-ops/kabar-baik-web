@@ -1,30 +1,5 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
-
-const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id';
-let newsItems = [];
-let loadError = false;
-
-try {
-  const response = await fetch(
-    `${cmsUrl}/items/berita?fields=id,judul,slug,cover,date_created&sort=-date_created&limit=12`
-  );
-  if (!response.ok) throw new Error(`Directus merespons dengan status ${response.status}`);
-  const result = await response.json();
-  newsItems = Array.isArray(result.data) ? result.data : [];
-} catch (error) {
-  loadError = true;
-  console.error('Gagal memuat berita saat build:', error);
-}
-
-const [headline, ...otherNews] = newsItems;
-const featuredNews = otherNews.slice(0, 4);
-const latestNews = otherNews.slice(4);
-const articleUrl = (slug) => `/baca?slug=${encodeURIComponent(slug ?? '')}`;
-const coverUrl = (cover) => `${cmsUrl}/assets/${encodeURIComponent(cover)}`;
-const formatDate = (value) => value ? new Date(value).toLocaleDateString('id-ID', {
-  day: 'numeric', month: 'long', year: 'numeric'
-}) : '';
 ---
 
 <SiteLayout>
@@ -33,165 +8,111 @@ const formatDate = (value) => value ? new Date(value).toLocaleDateString('id-ID'
     <p>Informasi pilihan dan cerita terbaru yang layak Anda baca.</p>
   </section>
 
-  {loadError ? <div class="status error">Berita belum dapat dimuat.</div> : headline && (
-    <>
+  <div id="status" class="status" role="status">Memuat berita terbaru...</div>
+  <div id="news-root" hidden></div>
+</SiteLayout>
+
+<script>
+  const CMS_URL = 'https://cms.kabar-baik.id';
+  const statusEl = document.getElementById('status');
+  const newsRoot = document.getElementById('news-root');
+
+  const formatDate = (value) => value ? new Date(value).toLocaleDateString('id-ID', {
+    day: 'numeric', month: 'long', year: 'numeric'
+  }) : '';
+  const articleUrl = (slug) => `/baca?slug=${encodeURIComponent(slug ?? '')}`;
+  const coverUrl = (cover) => `${CMS_URL}/assets/${encodeURIComponent(cover)}`;
+
+  function imageMarkup(news, className = '') {
+    return news.cover
+      ? `<img class="${className}" src="${coverUrl(news.cover)}" alt="Gambar ${news.judul || 'berita'}" loading="lazy" />`
+      : '<div class="placeholder">Kabar Baik</div>';
+  }
+
+  function renderNews(items) {
+    const [headline, ...otherNews] = items;
+    const featuredNews = otherNews.slice(0, 4);
+    const latestNews = otherNews.slice(4);
+
+    newsRoot.innerHTML = `
       <section class="lead-layout">
         <article class="headline-card">
-          <a href={articleUrl(headline.slug)}>
+          <a href="${articleUrl(headline.slug)}">
             <div class="headline-media">
-              {headline.cover ? <img src={coverUrl(headline.cover)} alt={`Gambar ${headline.judul}`} /> : <div class="placeholder">Kabar Baik</div>}
+              ${imageMarkup(headline)}
               <span class="headline-label">Utama</span>
             </div>
             <div class="headline-content">
-              <time datetime={headline.date_created}>{formatDate(headline.date_created)}</time>
-              <h2>{headline.judul}</h2><span class="read-more">Baca berita →</span>
+              <time datetime="${headline.date_created || ''}">${formatDate(headline.date_created)}</time>
+              <h2>${headline.judul || 'Berita tanpa judul'}</h2>
+              <span class="read-more">Baca berita →</span>
             </div>
           </a>
         </article>
         <div class="featured-list">
-          <div class="list-heading"><h2>Pilihan Editor</h2><span>{featuredNews.length} berita</span></div>
-          {featuredNews.map((news, index) => (
+          <div class="list-heading"><h2>Pilihan Editor</h2><span>${featuredNews.length} berita</span></div>
+          ${featuredNews.map((news, index) => `
             <article class="featured-item">
-              <span class="item-number">{String(index + 1).padStart(2, '0')}</span>
-              <a href={articleUrl(news.slug)}><time datetime={news.date_created}>{formatDate(news.date_created)}</time><h3>{news.judul}</h3></a>
-              {news.cover && <img src={coverUrl(news.cover)} alt="" loading="lazy" />}
-            </article>
-          ))}
+              <span class="item-number">${String(index + 1).padStart(2, '0')}</span>
+              <a href="${articleUrl(news.slug)}">
+                <time datetime="${news.date_created || ''}">${formatDate(news.date_created)}</time>
+                <h3>${news.judul || 'Berita tanpa judul'}</h3>
+              </a>
+              ${news.cover ? `<img src="${coverUrl(news.cover)}" alt="" loading="lazy" />` : ''}
+            </article>`).join('')}
         </div>
       </section>
-      {latestNews.length > 0 && <section class="latest-section">
-        <div class="section-heading"><div><span class="eyebrow">Terbaru</span><h2>Kabar Lainnya</h2></div><span class="heading-line"></span></div>
-        <div class="news-grid">{latestNews.map((news) => (
-          <article class="news-card"><a href={articleUrl(news.slug)}>
-            <div class="card-media">{news.cover ? <img src={coverUrl(news.cover)} alt={`Gambar ${news.judul}`} loading="lazy" /> : <div class="placeholder">Kabar Baik</div>}</div>
-            <div class="card-content"><time datetime={news.date_created}>{formatDate(news.date_created)}</time><h3>{news.judul}</h3><span class="read-more">Selengkapnya →</span></div>
-          </a></article>
-        ))}</div>
-      </section>}
-    </>
-  )}
-</SiteLayout>
+      ${latestNews.length ? `
+        <section class="latest-section">
+          <div class="section-heading"><div><span class="eyebrow">Terbaru</span><h2>Kabar Lainnya</h2></div><span class="heading-line"></span></div>
+          <div class="news-grid">
+            ${latestNews.map((news) => `
+              <article class="news-card"><a href="${articleUrl(news.slug)}">
+                <div class="card-media">${imageMarkup(news)}</div>
+                <div class="card-content">
+                  <time datetime="${news.date_created || ''}">${formatDate(news.date_created)}</time>
+                  <h3>${news.judul || 'Berita tanpa judul'}</h3>
+                  <span class="read-more">Selengkapnya →</span>
+                </div>
+              </a></article>`).join('')}
+          </div>
+        </section>` : ''}
+    `;
 
-<script>
-  const statusEl = document.getElementById('status');
-  const newsList = document.getElementById('news-list');
-
-  function formatDate(value) {
-    if (!value) return '';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
+    statusEl.hidden = true;
+    newsRoot.hidden = false;
   }
 
-  function createNewsCard(news) {
-    const article = document.createElement('article');
-    article.className = 'news-card';
-
-    const link = document.createElement('a');
-    link.className = 'card-link';
-    link.href = `/baca?slug=${encodeURIComponent(news.slug ?? '')}`;
-
-    if (news.cover) {
-      const image = document.createElement('img');
-      image.className = 'cover';
-      image.src = `${cmsUrl}/assets/${encodeURIComponent(news.cover)}`;
-      image.alt = news.judul ? `Gambar ${news.judul}` : 'Gambar berita';
-      image.loading = 'lazy';
-      link.append(image);
-    } else {
-      const placeholder = document.createElement('div');
-      placeholder.className = 'cover placeholder';
-      placeholder.textContent = 'Kabar Baik';
-      link.append(placeholder);
-    }
-
-    const content = document.createElement('div');
-    content.className = 'card-content';
-
-    const date = document.createElement('time');
-    date.dateTime = news.date_created ?? '';
-    date.textContent = formatDate(news.date_created);
-
-    const title = document.createElement('h2');
-    title.textContent = news.judul || 'Berita tanpa judul';
-
-    content.append(date, title);
-
-    const readMore = document.createElement('span');
-    readMore.className = 'read-more';
-    readMore.textContent = 'Baca selengkapnya →';
-    content.append(readMore);
-
-    link.append(content);
-    article.append(link);
-    return article;
-  }
-
-  function loadNews() {
-    if (initialLoadError) {
+  async function loadNews() {
+    try {
+      const response = await fetch('/api/berita?fields=id,judul,slug,cover,date_created&sort=-date_created&limit=12', {
+        headers: { Accept: 'application/json' }
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await response.json();
+      const items = Array.isArray(result.data) ? result.data : [];
+      if (!items.length) {
+        statusEl.textContent = 'Belum ada berita yang diterbitkan.';
+        return;
+      }
+      renderNews(items);
+    } catch (error) {
+      console.error('Gagal memuat berita:', error);
       statusEl.classList.add('error');
       statusEl.textContent = 'Berita belum dapat dimuat. Silakan coba beberapa saat lagi.';
-      return;
     }
-
-    if (initialNewsItems.length === 0) {
-      statusEl.textContent = 'Belum ada berita yang diterbitkan.';
-      return;
-    }
-
-    const fragment = document.createDocumentFragment();
-    initialNewsItems.forEach((news) => fragment.append(createNewsCard(news)));
-    newsList.append(fragment);
-    statusEl.hidden = true;
   }
 
-  // Data dirender langsung oleh Astro agar tidak terkena pembatasan CORS browser.
+  loadNews();
 </script>
 
 <style>
-  .section-heading {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    margin-bottom: 28px;
-  }
-
-  .eyebrow {
-    color: #26794a;
-    font-size: 0.78rem;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-
-  h1 {
-    margin: 5px 0 0;
-    font-size: clamp(2rem, 5vw, 3rem);
-    letter-spacing: -0.04em;
-  }
-
-  .status {
-    padding: 24px;
-    color: #58635c;
-    text-align: center;
-    background: #fff;
-    border: 1px solid #e0e6e1;
-    border-radius: 14px;
-  }
-
-  .status.error {
-    color: #9d2d24;
-    background: #fff4f2;
-    border-color: #f4cbc6;
-  }
-
   .page-intro { display:flex; align-items:end; justify-content:space-between; gap:32px; padding-bottom:24px; margin-bottom:32px; border-bottom:1px solid #dce4de; }
   .page-intro h1 { margin:5px 0 0; color:#13251a; font-size:clamp(2.25rem,5vw,3.8rem); line-height:.98; letter-spacing:-.055em; }
   .page-intro p { max-width:390px; margin:0; color:#647068; line-height:1.65; }
+  .eyebrow { color:#26794a; font-size:.78rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+  .status { padding:24px; color:#58635c; text-align:center; background:#fff; border:1px solid #e0e6e1; border-radius:14px; }
+  .status.error { color:#9d2d24; background:#fff4f2; border-color:#f4cbc6; }
   .lead-layout { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(310px,.85fr); gap:36px; }
   .headline-card, .news-card { overflow:hidden; background:#fff; border:1px solid #dce4de; border-radius:20px; box-shadow:0 16px 50px rgba(18,60,37,.08); }
   .headline-card a, .news-card a, .featured-item a { color:inherit; text-decoration:none; }
@@ -223,18 +144,6 @@ const formatDate = (value) => value ? new Date(value).toLocaleDateString('id-ID'
   .placeholder { display:grid; width:100%; height:100%; place-items:center; color:#176b3a; background:linear-gradient(145deg,#e9f2ec,#d7e7dc); font-weight:800; }
   .card-content { padding:18px 19px 20px; }
   .card-content h3 { min-height:2.7em; margin:7px 0 17px; font-size:1.08rem; line-height:1.35; }
-
-  @media (max-width:900px) {
-    .lead-layout { grid-template-columns:1fr; }
-    .featured-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:24px; }
-    .list-heading { grid-column:1/-1; }
-    .news-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
-  }
-  @media (max-width:620px) {
-    .page-intro { display:block; }
-    .page-intro p { margin-top:14px; }
-    .featured-list, .news-grid { grid-template-columns:1fr; }
-    .headline-content { padding:20px; }
-    .latest-section { margin-top:48px; }
-  }
+  @media (max-width:900px) { .lead-layout { grid-template-columns:1fr; } .featured-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:24px; } .list-heading { grid-column:1/-1; } .news-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  @media (max-width:620px) { .page-intro { display:block; } .page-intro p { margin-top:14px; } .featured-list, .news-grid { grid-template-columns:1fr; } .headline-content { padding:20px; } .latest-section { margin-top:48px; } }
 </style>

@@ -1,21 +1,5 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
-
-const cmsUrl = import.meta.env.PUBLIC_DIRECTUS_URL || 'https://cms.kabar-baik.id';
-let allArticles = [];
-let loadError = false;
-
-try {
-  const response = await fetch(
-    `${cmsUrl}/items/berita?fields=id,judul,konten,cover,date_created,slug&sort=-date_created`
-  );
-  if (!response.ok) throw new Error(`Directus merespons dengan status ${response.status}`);
-  const result = await response.json();
-  allArticles = Array.isArray(result.data) ? result.data : [];
-} catch (error) {
-  loadError = true;
-  console.error('Gagal memuat artikel saat build:', error);
-}
 ---
 
 <SiteLayout categories={[]}>
@@ -31,7 +15,8 @@ try {
   </article>
 </SiteLayout>
 
-<script define:vars={{ cmsUrl, allArticles, initialLoadError: loadError }}>
+<script>
+  const CMS_URL = 'https://cms.kabar-baik.id';
   const loading = document.getElementById('loading');
   const articleContainer = document.getElementById('article-container');
   const titleEl = document.getElementById('judul');
@@ -40,32 +25,40 @@ try {
   const contentEl = document.getElementById('konten');
 
   async function loadArticle() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const slug = urlParams.get('slug');
-
+    const slug = new URLSearchParams(window.location.search).get('slug');
     if (!slug) {
       loading.textContent = 'Artikel tidak ditemukan.';
       return;
     }
 
     try {
-      if (initialLoadError) throw new Error('Data artikel gagal dimuat saat build');
-      const berita = allArticles.find((article) => article.slug === slug);
+      const params = new URLSearchParams({
+        fields: 'id,judul,konten,cover,date_created,slug',
+        limit: '1',
+      });
+      params.set('filter[slug][_eq]', slug);
 
+      const response = await fetch(`/api/berita?${params.toString()}`, {
+        headers: { Accept: 'application/json' },
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const result = await response.json();
+      const berita = Array.isArray(result.data) ? result.data[0] : null;
       if (!berita) {
         loading.textContent = 'Artikel tidak ditemukan.';
         return;
       }
 
-      titleEl.textContent = berita.judul;
-      dateEl.textContent = new Date(berita.date_created).toLocaleDateString('id-ID', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      });
+      titleEl.textContent = berita.judul || 'Berita tanpa judul';
+      dateEl.textContent = berita.date_created
+        ? new Date(berita.date_created).toLocaleDateString('id-ID', {
+            day: 'numeric', month: 'long', year: 'numeric'
+          })
+        : '';
 
       if (berita.cover) {
-        coverEl.src = `${cmsUrl}/assets/${encodeURIComponent(berita.cover)}`;
+        coverEl.src = `${CMS_URL}/assets/${encodeURIComponent(berita.cover)}`;
         coverEl.alt = berita.judul ? `Gambar ${berita.judul}` : 'Gambar berita';
         coverEl.hidden = false;
       }
@@ -83,86 +76,10 @@ try {
 </script>
 
 <style>
-  .back-link {
-    display: inline-block;
-    margin-bottom: 24px;
-    color: #176b3a;
-    text-decoration: none;
-    font-weight: 700;
-  }
-
-  .article-page h1 {
-    margin-top: 0;
-    font-size: clamp(2rem, 4vw, 3rem);
-    line-height: 1.1;
-  }
-
-  .article-meta {
-    color: #6b756e;
-    margin: 12px 0 24px;
-  }
-
-  .article-cover {
-    width: 100%;
-    max-height: 520px;
-    object-fit: cover;
-    border-radius: 18px;
-    margin-bottom: 32px;
-  }
-
-  .article-body {
-    color: #323d33;
-    line-height: 1.8;
-  }
-
-  .loading {
-    padding: 32px;
-    color: #58635c;
-    text-align: center;
-    background: #fff;
-    border: 1px solid #e0e6e1;
-    border-radius: 14px;
-  }
-</style>
-<style>
-  .back-link {
-    display: inline-block;
-    margin-bottom: 24px;
-    color: #176b3a;
-    text-decoration: none;
-    font-weight: 700;
-  }
-
-  .article-page h1 {
-    margin-top: 0;
-    font-size: clamp(2rem, 4vw, 3rem);
-    line-height: 1.1;
-  }
-
-  .article-meta {
-    color: #6b756e;
-    margin: 12px 0 24px;
-  }
-
-  .article-cover {
-    width: 100%;
-    max-height: 520px;
-    object-fit: cover;
-    border-radius: 18px;
-    margin-bottom: 32px;
-  }
-
-  .article-body {
-    color: #323d33;
-    line-height: 1.8;
-  }
-
-  .status {
-    padding: 24px;
-    color: #58635c;
-    text-align: center;
-    background: #fff;
-    border: 1px solid #e0e6e1;
-    border-radius: 14px;
-  }
+  .back-link { display:inline-block; margin-bottom:24px; color:#176b3a; text-decoration:none; font-weight:700; }
+  .article-page h1 { margin-top:0; font-size:clamp(2rem,4vw,3rem); line-height:1.1; }
+  .article-meta { color:#6b756e; margin:12px 0 24px; }
+  .article-cover { width:100%; max-height:520px; object-fit:cover; border-radius:18px; margin-bottom:32px; }
+  .article-body { color:#323d33; line-height:1.8; }
+  .loading { padding:32px; color:#58635c; text-align:center; background:#fff; border:1px solid #e0e6e1; border-radius:14px; }
 </style>
